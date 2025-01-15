@@ -1,11 +1,11 @@
 import random
 import math
 
-def algorithm_evklid_extended(x, y):
+def algorithm_euclid_extended(x, y):
     if x == 0:
         return (y, 0, 1)
     else:
-        d, x1, y1 = algorithm_evklid_extended(y % x, x)
+        d, x1, y1 = algorithm_euclid_extended(y % x, x)
         return (d, y1 - (y // x) * x1, x1)
     
 def algorithm_fast_pow(x, y, modulus=None):
@@ -13,7 +13,7 @@ def algorithm_fast_pow(x, y, modulus=None):
         if modulus is None:
             return 1 / algorithm_fast_pow(x, -y)
         else:
-            inverse = algorithm_evklid_extended(x, modulus)[1]
+            inverse = algorithm_euclid_extended(x, modulus)[1]
             if inverse is None:
                 raise ValueError("Modular inverse does not exist")
             return inverse * algorithm_fast_pow(x, -y, modulus) % modulus
@@ -111,7 +111,7 @@ def algorithm_Miller_Rabin_test(n, k=None):
     return True
 
 def algorithm_comprasion(a ,b ,m):
-    GCD, x, _ = algorithm_evklid_extended(a, m)
+    GCD, x, _ = algorithm_euclid_extended(a, m)
     if b % GCD != 0:
         return None
     
@@ -134,7 +134,7 @@ def chinese_remainder_theorem(system):
     x = 0
     for _, b, m in system:
         Mi = M // m
-        _, Mi_inv, _ = algorithm_evklid_extended(Mi, m)
+        _, Mi_inv, _ = algorithm_euclid_extended(Mi, m)
         x += b * Mi * Mi_inv
     
     return x % M, M
@@ -193,27 +193,6 @@ def algorithm_second_degree_comparison(a, p):
     x = a1 * N2 % p
     return [x, p - x] 
 
-def algorithm_Polynomial_Field(p, degree):
-    choice = input("Choose operation: 1 - add polynomials, 2 - muiltiply polynomials, help - show example of cofficients input\nChoice: ")
-    if choice == '1':
-        print("Enter coefficients for the first polynomial")
-        a = list(map(int, input().split()))
-        print("Enter coefficients for the second polynomial")
-        b = list(map(int, input().split()))
-        print(algorithm_add_polynomials(a, b, p))
-    elif choice == '2':
-        print("Enter coefficients for the first polynomial")
-        a = list(map(int, input().split()))
-        print("Enter coefficients for the second polynomial")
-        b = list(map(int, input().split()))
-        print("Enter coefficients for the irreducible polynomial")
-        irreducible = list(map(int, input().split()))
-        print(algorithm_mul_polynomials(a, b, p, irreducible))
-    elif choice == "help":
-        print("Example of coefficients input:")
-    else:
-        print("Invalid choice")
-
 def algorithm_add_polynomials(a, b, p):
     length = max(len(a), len(b))
     result = [(a[i] if i < len(a) else 0) + (b[i] if i < len(b) else 0) for i in range(length)]
@@ -237,3 +216,43 @@ def algorithm_mul_polynomials(a, b, p, irreducible):
             result[i] %= p
         result.pop(0)
     return result
+
+def algorithm_rho_pollard_fact(N):
+    if algorithm_Miller_Rabin_test(N):
+        return [N]
+    if N == 1:
+        return None
+
+    a, b = random.randint(1, N - 1), random.randint(1, N - 1)
+    divisors = []
+
+    for _ in range(10000):
+        if N == 1:
+            break
+        c = random.randint(1, 10)
+        a = spfunc(a, N, c)
+        b = spfunc(spfunc(b, N, c), N, c)
+        d = algorithm_euclid_extended(abs(a - b), N)[0]
+
+        if 1 < d < N:
+            if algorithm_Miller_Rabin_test(d):
+                divisors.append(d)
+            else:
+                divisors += algorithm_rho_pollard_fact(d)
+            N //= d
+        elif d == 4:
+            divisors += [2, 2]
+            N //= d
+        else:
+            a, b = random.randint(1, N - 1), random.randint(1, N - 1)
+
+    if N > 1:
+        divisors.append(N)
+
+    return divisors
+
+def spfunc(x, N, c=None):
+    if c == None:
+        return (algorithm_fast_pow(x, 2) + 1) % N
+    else:
+        return (algorithm_fast_pow(x, 2) + c) % N
