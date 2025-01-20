@@ -1,5 +1,6 @@
 import random
 import math
+import json
 
 def algorithm_euclid_extended(x, y):
     if x == 0:
@@ -272,7 +273,7 @@ def algorithm_pollard_p_minus_1(N):
     if N in small_factors:
         return small_factors[N]
 
-    with open("Numbers_Factorization/src/prime_numbers.json", "r") as json_file:
+    with open("path/to/jsonfile/with/primes", "r") as json_file:
         primes = json.load(json_file)["primes"]
 
     a = random.randint(2, N - 2)
