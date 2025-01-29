@@ -3,7 +3,7 @@ import os
 import math
 lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '.', 'algorithms'))
 sys.path.append(lib_path)
-from algorithms import algorithm_fast_pow, algorithm_comprasion, algorithm_rho_pollard_fact
+from algorithms import algorithm_fast_pow, algorithm_comprasion, algorithm_rho_pollard_fact, algorithm_all_divisors
 
 def algorithm_rho_pollard():
     u, v = 2, 2

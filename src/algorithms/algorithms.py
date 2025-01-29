@@ -1,6 +1,6 @@
 import random
 import math
-import json
+import secrets
 
 def algorithm_euclid_extended(x, y):
     if x == 0:
@@ -17,10 +17,13 @@ def algorithm_fast_pow(x, y, modulus=None):
             inverse = algorithm_euclid_extended(x, modulus)[1]
             if inverse is None:
                 raise ValueError("Modular inverse does not exist")
-            return inverse * algorithm_fast_pow(x, -y, modulus) % modulus
+            return algorithm_fast_pow(inverse, -y, modulus)
+    
+    if y == 0:
+        return 1 % modulus if modulus else 1
+    
     result = 1
-    base = x if modulus is None else x % modulus
-    y = abs(y)
+    base = x % modulus if modulus else x
     while y > 0:
         if y & 1:
             result = (result * base) % modulus if modulus else result * base
@@ -151,15 +154,12 @@ def algorithm_comprasion_system(system):
     return chinese_remainder_theorem(solved_system)
 
 
-def algorithm_generate_prime(bit_length):
-    prime = 1
-    for _ in range(bit_length - 1):
-        prime <<= random.randint(0, 1)
-
-    prime |= 1
-
+def algorithm_generate_prime(bit_length, k=50):
     while True:
-        if algorithm_Miller_Rabin_test(prime):
+        prime = secrets.randbits(bit_length)
+        prime |= (1 << (bit_length - 1)) | 1  
+
+        if algorithm_Miller_Rabin_test(prime, k):
             return prime
         
 def algorithm_second_degree_comparison(a, p):
@@ -257,51 +257,24 @@ def spfunc(x, N, c=None):
         return (algorithm_fast_pow(x, 2) + 1) % N
     else:
         return (algorithm_fast_pow(x, 2) + c) % N
-    
 
-def algorithm_pollard_p_minus_1(N):
-    if algorithm_Miller_Rabin_test(N):
-        return [N]
-    if N == 1:
-        return None
+def algorithm_all_divisors(N):
+    prime_factors = algorithm_rho_pollard_fact(N)
+    if not prime_factors:
+        return [1]  
 
-    small_factors = {
-        4: [2, 2],
-        6: [2, 3],
-        10: [2, 5],
-    }
-    if N in small_factors:
-        return small_factors[N]
+    unique_factors = list(set(prime_factors))
+    divisors = [1]
 
-    with open("path/to/jsonfile/with/primes", "r") as json_file:
-        primes = json.load(json_file)["primes"]
+    for factor in unique_factors:
+        max_power = prime_factors.count(factor)
+        current_divisors = divisors.copy()
 
-    a = random.randint(2, N - 2)
-    divisors = []
-    lnN = math.log(N)
+        for power in range(1, max_power + 1):
+            for d in current_divisors:
+                new_divisor = d * (factor ** power)
+                if new_divisor not in divisors:
+                    divisors.append(new_divisor)
 
-    for prime in primes[:1000]:
-        l = int(lnN // math.log(prime))
-        a = algorithm_fast_pow(a, algorithm_fast_pow(prime, l), N)
-        d = algorithm_euclid_extended(abs(a - 1), N)[0]
-
-        if 1 < d < N:
-            if algorithm_Miller_Rabin_test(d):
-                divisors.append(d)
-            else:
-                divisors += algorithm_pollard_p_minus_1(d)
-            N //= d
-        elif N == 4:
-            divisors += [2, 2]
-            N //= 4
-        elif N == 2 or N == 3:
-            divisors.append(N)
-            N == 1
-            break
-        else:
-            a = random.randint(2, N - 2)
-
-    if N > 1:
-        divisors.append(N)
-
+    divisors.sort()
     return divisors
